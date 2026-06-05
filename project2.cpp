@@ -127,10 +127,78 @@ void shufdek(dek *d){
         
     }
 }
-
-struct pHand{
-    crd cards[52]; //maimum cards a player can technically hold
+/**
+ * @brief template class to hold any data type in hand
+ */
+template <class T>
+class pHand{
+private:
+    T cards[52]; //maimum cards a player can technically hold t holds any data type
     int count; // number of cards in the players hand
+public:
+    /**
+     * @brief initialize an empty hand
+     */
+    pHand() : count(0) {};
+    /**
+     * @brief adding card to hand
+     */
+    void adCrd(T item){
+        if (count < 52){
+            cards[count] = item; // puts item in next opening
+            count++;
+        }
+    }
+    /**
+     * @brief returns # of items in hand
+     * @return count
+     */
+    int getCount() const {return count;}
+    /**
+     * @brief look at a by specific spot
+     */
+    T getCrd(int i) const {
+        return cards[i];
+    }
+    /**
+     * @brief will remove all items matching
+     * @param target item matching and take
+     */
+    
+    int takeCrd(T target){
+        int remove = 0;
+        T temp[52];
+        int nCount = 0;
+        
+        for(int i = 0; i < count; i++){
+            if(cards[i] == target){
+                remove++;
+            }
+            else {
+                temp[nCount] = cards[i];
+                nCount++;
+            }
+        }
+        for( int i = 0; i < nCount; i++){
+            cards[i] = temp[i];
+        }
+        count = nCount;
+        return remove;
+    }
+    
+    /**
+     * @brief checking if hand has a specific card
+     * @return true if found
+     */
+    bool hasCrd(T target) const{
+        for(int i = 0; i < count; i++){
+            if(cards[i] = target){
+                return true; // will loop through cards. if a match is found it's true
+            }
+        }
+        return false;
+    }
+    
 };
 
 struct p1{ //about player 1
