@@ -82,6 +82,73 @@ public:
         return out;
     }
 };
+/**
+ * @brief Template for the deck
+ */
+
+template <class T>
+class dek{
+private:
+    crd crds[52]; // 52 card deck
+    int left; // variable of remaining cards
+    int top; // index of next available card
+    
+public:
+    /**
+     * @brief initializing the empty deck
+     */
+    dek() : left(0), top(0) {}
+    /**
+     * @brief building the 52 card deck
+     */
+    void dekbld(){
+        const char ranks[] = "A23456789TJQK";
+        const char suits[] = "CDHS";
+        int index = 0;
+        
+        for (int s = 0; s < 4; s++){
+            for(int r = 0; r < 13; r++){
+                crds[index] = T(ranks[r], suits[s]);
+                index++;
+            }
+        }
+        left = 52;
+        top = 0;
+    }
+    /**
+     * @brief shuffles the deck with swap function. think fisher yates
+     */
+    void shuffle(){
+        for(int i = 51; i > 0; i--){
+            int j = rand() % (i + 1);
+            if(i == j) continue;
+            
+            T temp = crds[i];
+            crds[i] = crds[j];
+            crds[j] = temp;
+            
+        }
+    }
+    /**
+     * @brief deals the top card of deck
+     */
+    T dealCrd(){
+        T deal = crds[top];
+        top++;
+        left--;
+        return deal;
+    }
+    /**
+     * @brief returns # of cards remaining in deck
+     */
+    int crdLeft() const {return left;}
+    /**
+     * @brief check if the deck is empty
+     */
+    bool empty() const {return left == 0;}
+    
+    
+};
 
 struct dek{
     crd crds[52]; // 52 card deck
@@ -90,43 +157,7 @@ struct dek{
 
 };
 
-// *d is our pointer * means to go to that address
-void dekbld (dek *d){
-    const char ranks[] = "A23456789TJQK"; // all the different cards in a deck
-    const char suits[] = "CDHS"; // = clubs, diamonds, hearts, spades
 
-    int index = 0; // will keep track of which of the 52 cards to fill
-
-    // goes through our suits CDHS
-    for (int s = 0; s < 4; s++){
-
-        for (int r = 0; r < 13; r++){
-
-            d->crds[index].rank = ranks[r];
-            d->crds[index].suit = suits[s];
-            index++;
-
-        }
-    }
-    d->left = 52; //pointer will go to address and can change the value
-    d->top = 0;
-}
-
-void shufdek(dek *d){
-    //imagine the deck dwindling down as you pick up cards. so start at top of deck
-    for(int i = 51; i > 0; i--){
-        //picks at random
-        int j = rand() % (i + 1);
-        if(i == j) continue;
-        
-        //swap formula
-        
-        crd temp = d->crds[i];
-        d->crds[i] = d->crds[j];
-        d->crds[j] = temp;
-        
-    }
-}
 /**
  * @brief template class to hold any data type in hand
  */
@@ -208,44 +239,7 @@ struct p1{ //about player 1
     
 };
 
-//function to add a card to players hand
-void adCrd(pHand *h, crd c){
-    h->cards[h->count] = c; //pust card in the next open slot
-    h->count++; // increments players current hand size
-}
 
-// function to check if hand has card of a specific rank
-int hasCrd(const pHand *h, char rank){
-    for(int i = 0; i < h->count; i++){
-        if(h->cards[i].rank == rank)
-            return 1; // return if found in hand
-    }
-    return 0; //return if not found in hand
-}
-
-//function to give up cards if you have an opponent matches
-int takeCrd(pHand *h, char rank){
-    int remove = 0;
-    int newC = 0;
-    crd temp[52];
-    
-    for (int i = 0; i < h->count; i++){
-        if(h->cards[i].rank == rank){
-            remove++; //card is counted as removed
-        }
-        else{
-            temp[newC] = h->cards[i]; // will keep the card
-            newC++;
-        }
-    }
-    //will move the kept cards back in your hand
-    for(int i = 0; i < newC; i++)
-        h->cards[i] = temp[i];
-    
-    h->count = newC; //will update your hand
-    return remove;
-    
-}
 
 //function to check for a complete book in hand
 void fulBok(p1 *p){
