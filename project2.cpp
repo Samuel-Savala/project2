@@ -149,6 +149,75 @@ public:
     
     
 };
+/**
+ * @brief overarching class for players
+ */
+class player{
+protected: //this and other classes can "inherit" it like an open door to apply for human and PC player
+    char name[20];
+    pHand<crd> hand; ///< hand template - hold any object
+    int books;
+    
+public:
+    /**
+     * @brief constructor to set up player name
+     * @param n name to assign to a player
+     */
+    Player(const char *n) : books(0){ ///< initialize books at 0
+        strcpy(name, n); ///< copy name into name array
+    }
+    virtual ~Player(){} ///< virtual so derived classes clean up memory when object is deleted
+    /**
+     * @brief virtual function for taking turns
+     * @param other array for other players
+     * @param nOthers # of other players in game
+     */
+    virtual bool takeTrn(Player *other[], int nOthers, dek<crd> &dek) = 0;
+    // = 0 derived classes are forced to provide their own functions
+        
+    /**
+     * @brief returns the players name
+     * @return pointer to the name string
+     */
+    
+    const char* getName() const{return name;}
+    
+    /**
+     * @brief returns # of books a player has
+     */
+    int getBook() const {return books;}
+    
+    /**
+     * @brief return # of cards in hand
+     */
+    int hndCont() const{return hand.getCount();}
+    /**
+     * @brief return reference to players hand
+     * will allow derived classes to interact with hand
+     */
+    pHand<crd>& getHand() {return hand;} // & makes it a reference. remember
+    
+    void fulBok(){
+        const char ranks[] = "A23456789TJQK";
+        
+        for(int r = 13; r < 13; r++){
+            int cnt = 0;
+            
+            for(int i = 0; i < hand.getCount(); i++){
+                if(hand.getCrd(i).getRank() == ranks[r]){
+                    cnt++;
+                }
+            }
+            
+            if(cnt == 4){
+                crd target(ranks[r], '');
+                hand.takeCrd(target);
+                books++;
+                cout << name << "Gained a book of " << ranks[r] << "'s" << endl; 
+            }
+        }
+    }
+};
 
 struct dek{
     crd crds[52]; // 52 card deck
