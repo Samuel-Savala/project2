@@ -163,7 +163,7 @@ public:
      * @brief constructor to set up player name
      * @param n name to assign to a player
      */
-    Player(const char *n) : books(0){ ///< initialize books at 0
+    player(const char *n) : books(0){ ///< initialize books at 0
         strcpy(name, n); ///< copy name into name array
     }
     virtual ~player(){} ///< virtual so derived classes clean up memory when object is deleted
@@ -200,7 +200,7 @@ public:
     void fulBok(){
         const char ranks[] = "A23456789TJQK";
         
-        for(int r = 13; r < 13; r++){
+        for(int r = 0; r < 13; r++){
             int cnt = 0;
             
             for(int i = 0; i < hand.getCount(); i++){
@@ -210,7 +210,7 @@ public:
             }
             
             if(cnt == 4){
-                crd target(ranks[r], '');
+                crd target(ranks[r], ' ');
                 hand.takeCrd(target);
                 books++;
                 cout << name << "Gained a book of " << ranks[r] << "'s" << endl; 
@@ -409,7 +409,7 @@ public:
      */
     bool hasCrd(T target) const{
         for(int i = 0; i < count; i++){
-            if(cards[i] = target){
+            if(cards[i] == target){
                 return true; // will loop through cards. if a match is found it's true
             }
         }
@@ -441,7 +441,7 @@ public:
      * @param deck reference
      * @return true for cpu to have +1 turn or false if not
      */
-    bool tTurn(player *others[], int nOthers, dek<crd>, &dek){
+    bool tTurn(player *others[], int nOthers, dek<crd> &dek){
         if(hand.getCount() == 0){
             drawCrd(dek);
             return false;
@@ -449,14 +449,14 @@ public:
         cout << "--- " << name << "'s Turn ---" << endl;
         char rank = pkRank(); // cpu will pick the card
         
-        int targeti = rand % nOthers; // cpu will pick a random player
+        int targeti = rand() % nOthers; // cpu will pick a random player
         player *target = others[targeti];
         
         cout << name << " asks " << target->getName() << ", Do you have any "
                 << rank << "'s?" << endl;
         
         crd crdLook(rank, ' ');
-        if(target->getName().hasCrd(crdLook)){
+        if(target->getHand().hasCrd(crdLook)){
             int taken = target->getHand().takeCrd(crdLook);
             cout << target->getName() << " had " << taken << 
                     " card(s). Transfer..." << endl;
@@ -475,8 +475,69 @@ public:
             fulBok();
             return false;
         }
+    }        
     
 };
+
+/**
+ * @brief derived player class for easy cpu difficulty player
+ */
+class easyCPU : public cpuP{
+public:
+    /** easyCPU constructor
+     */
+    easyCPU(const char *n) : cpuP(n){}
+    
+    /**
+     * @brief pick a random rank from hand
+     */
+    char pkRank(){
+        int randomi = rand() % hand.getCount();//random number between hand size
+        char cRank = hand.getCrd(randomi).getRank();
+        return cRank(); //get the rank and return
+    }
+    
+};
+
+/**
+ * @brief Harder difficulty cpu player ineherited from cpuP
+ */
+class hardCPU : public cpuP{
+public:
+    /**
+     * @brief hardCPU constructor
+     */
+    hardCPU( const char *n) : cpuP(n){}
+    
+    /**
+     * @brief picks card rank of majority that the cpu has
+     */
+    
+    char pkRank(){
+        const char ranks[] = "A23456789TJQK";
+        int icount = 0;
+        char bRank = hand.getCrd(0).getRank();
+        
+        for(int r = 0; r < 13; r++){
+            int cnt = 0; // loops through all 13 ranks
+        
+        
+            for(int i = 0; i < hand.getCount(); i++){// count cards in hand
+            if(hand.getCrd(i).getRank() == ranks[r]){ // match for the rank
+                cnt++;
+            }
+        }
+        
+            if(cnt > icount){ //there's a better rank
+                icount = cnt; // update count 
+                bRank = ranks[r]; //update which rank has that count and return it
+            }
+        }
+        return bRank;
+    }
+    
+};
+    
 struct p1{ //about player 1
     char name[20];//For players name
     pHand h; //cards in players hand currently referencing pHand struct
