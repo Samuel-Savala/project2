@@ -166,13 +166,13 @@ public:
     Player(const char *n) : books(0){ ///< initialize books at 0
         strcpy(name, n); ///< copy name into name array
     }
-    virtual ~Player(){} ///< virtual so derived classes clean up memory when object is deleted
+    virtual ~player(){} ///< virtual so derived classes clean up memory when object is deleted
     /**
      * @brief virtual function for taking turns
      * @param other array for other players
      * @param nOthers # of other players in game
      */
-    virtual bool takeTrn(Player *other[], int nOthers, dek<crd> &dek) = 0;
+    virtual bool takeTrn(player *other[], int nOthers, dek<crd> &dek) = 0;
     // = 0 derived classes are forced to provide their own functions
         
     /**
@@ -216,6 +216,123 @@ public:
                 cout << name << "Gained a book of " << ranks[r] << "'s" << endl; 
             }
         }
+    }
+    /**
+    * @brief print out the players hand
+    * use operator << from crd class to display cards
+    */
+    void prntHnd() const{ //const so it only reads data - hand.getCount to get cards in hand currently
+        cout << endl << name << "'s hand (" << hand.getCount() << " cards: ";
+        
+        //loops through the players hand printing each card
+        for(int i = 0; i < hand.getCount(); i++){
+            cout << hand.getCrd(i) << " ";
+        }
+        cout << endl;
+    }
+    
+    /**
+     * @brief draw card from the deck and add to hand
+     * @return true if card is drawn, false if deck is empty
+     */
+    bool drawCrd(dek<crd> &dek){ // reference of the real deck
+        if(dek.empty()){
+            cout << "Deck is empty..." << endl;
+            return false;
+        }
+        crd nCard = dek.dealCrd();
+        hand.adCrd(nCard);
+        cout << name << " drew a new card." << endl;
+        return true;
+    }
+};
+
+/**
+ * @brief Logic for a human player in the game
+ * Inheritance from class player
+ */
+class HumanP1 : public player {
+public:
+    /**
+     * @brief Human Player constructor
+     * @param n = human player name
+     */
+    HumanP1(const char *n) : player(n){}
+    /**
+     * @brief Allow player to choose which player to ask and what card to request
+     * @return true if player gets another turn false if opposite
+     */
+    bool tkTurn(player *other[], int nOthers, dek<crd> & dek){
+        //checking empty hand
+        if(hand.getCount() == 0){
+            drawCrd(dek); ///< inheritance of drawCrd
+            return false;
+        }
+        prntHnd(); //show hand
+        //asking for card to choose
+        char rank;
+        bool valid = false;
+        while(!valid){
+            cout << endl << name << " pick a card to ask for: ";
+            cin >> rank;
+            rank = toupper(rank);
+            //if statement for player to have it in hand
+            crd targetCrd(rank, ' ');
+            if(hand.hasCrd(targetCrd)){
+                valid = true;
+            }
+            else{
+                cout << "Card not in hand... Ask for another: " << endl;
+            }
+        }
+        
+        int targeti = 0;
+        if(nOthers > 1){ //if just one player we skip but if not we ask to pick
+            cout << "Pick an opponent to ask for card: " << endl;
+            for(int i = 0; i < nOthers; i++)//go through cpu listing
+                cout << " " << (i + 1) << ". " << other[i]->getName() << endl;
+        }
+        bool vChoice = false;
+        while (!vChoice){
+            cout << "Enter choice (1-" << nOthers << "): ";
+            cin >> targeti;
+            targeti--;
+            if(targeti >= 0 && targeti < nOthers){
+                vChoice = true;
+            }
+            else{
+                cout << "Invalid Choice." << endl;
+            }
+        }
+    
+    /**
+     * @brief ask opponent you chose for a card
+     */
+    player *target = other[targeti];
+    cout << name << " asks " << target->getName() << ", Do you have any "
+            << rank << "'s?" << endl;
+    
+    crd crdLook(rank, ' '); //searching for card
+    if(target->getHand().getCrd(crdLook)){ //to check and get card
+        int taken = target->getHand().takeCrd(crdLook);
+        cout << target->getName() << " had " << taken
+                << " card(s). Transfer... " << endl; //check if opponent has cards
+        
+        //add card to your hand
+        for(int i = 0; i < taken; i++){
+            crd c(rank, ' ');
+            hand.adCrd(c);
+        }
+        fulBok();
+        cout << name << " goes again." << endl;
+        return true;;
+    }
+    else{
+        cout << "Go Fish!" << endl;
+        drawCrd(dek);
+        fulBok(); //will check if you have a full book of 4 to add score
+        return false;
+    }
     }
 };
 
@@ -301,6 +418,65 @@ public:
     
 };
 
+/**
+ * @brief class for computer players
+ * inherits player. will also be inherited to easy and hard cpu
+ */
+class cpuP : public player{
+public:
+    /**
+     * @brief cpu constructor
+     * @param n The name of the cpu player
+     */
+    cpuP(const char *n) : player(n) {}
+    
+    /**
+     * @brief virt function for picking a rank also so easy and hard can use their own
+     */
+    virtual char pkRank() = 0;
+    /**
+     * automated cpu turn
+     * @param others arr of pointers to other players
+     * @param nOthers # of other players
+     * @param deck reference
+     * @return true for cpu to have +1 turn or false if not
+     */
+    bool tTurn(player *others[], int nOthers, dek<crd>, &dek){
+        if(hand.getCount() == 0){
+            drawCrd(dek);
+            return false;
+        }
+        cout << "--- " << name << "'s Turn ---" << endl;
+        char rank = pkRank(); // cpu will pick the card
+        
+        int targeti = rand % nOthers; // cpu will pick a random player
+        player *target = others[targeti];
+        
+        cout << name << " asks " << target->getName() << ", Do you have any "
+                << rank << "'s?" << endl;
+        
+        crd crdLook(rank, ' ');
+        if(target->getName().hasCrd(crdLook)){
+            int taken = target->getHand().takeCrd(crdLook);
+            cout << target->getName() << " had " << taken << 
+                    " card(s). Transfer..." << endl;
+            
+            for( int i = 0; i < taken; i++){
+                crd c(rank, ' ');
+                hand.adCrd(c);
+            }
+            fulBok();
+            cout << name << " goes again." << endl;
+            return true;
+        }
+        else{
+            cout << "Go Fish!" << endl;
+            drawCrd(dek);
+            fulBok();
+            return false;
+        }
+    
+};
 struct p1{ //about player 1
     char name[20];//For players name
     pHand h; //cards in players hand currently referencing pHand struct
@@ -310,25 +486,7 @@ struct p1{ //about player 1
 
 
 
-//function to check for a complete book in hand
-void fulBok(p1 *p){
-    const char ranks[] = "A23456789TJQK";
-    
-    for(int r = 0; r < 13; r++){
-        int cnt = 0;
-        
-        //will check for how many of a specific card is in hand
-        for(int i = 0; i < p->h.count; i++){
-            if(p->h.cards[i].rank == ranks[r])
-                    cnt++;
-        }
-        // This is to mark a complete book/point
-        if(cnt == 4){
-            takeCrd(&p->h, ranks[r]); // calling function
-            p->books++; //adds a book to player
-            cout << p->name << " Gained Book " << ranks[r] << "s." << endl;
-        }
-    }
+
     
 }
 
@@ -346,27 +504,7 @@ void dealCrd(dek *d, p1 *p, p1 *p2){
         
 }
 
-//function to draw from deck to hand
-int drawCrd(dek *d, p1 *p){
-    if(d->left == 0){
-        cout << "No cards left... " << endl;
-        return 0;
-    }
-    
-    adCrd(&p->h, d->crds[d->top]); // player will take the top card
-    d->top++; //adds the card on top to player p hand
-    d->left--; //minus one card from the overall deck
-    cout << p->name << " received a new card." << endl;
-    return 1;
-}
 
-void prntHnd(const p1 *p){
-    cout << endl << p->name << "'s hand (" << p->h.count << " cards): ";
-    for(int i = 0; i < p->h.count; i++){
-        cout << p->h.cards[i].rank << p->h.cards[i].suit;
-    }
-    cout << endl;
-}
 
 //file i/o
 void svGame(const p1 *p, const p1 *p2, const dek *d){
