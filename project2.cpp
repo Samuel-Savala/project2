@@ -547,26 +547,6 @@ struct p1{ //about player 1
 
 
 
-
-    
-}
-
-// function to deal cards to players
-void dealCrd(dek *d, p1 *p, p1 *p2){
-    for(int i = 0; i < 7; i++){ // will start with 7
-        adCrd(&p->h, d->crds[d->top]);
-        d->top++;
-        d->left--;
-        
-        adCrd(&p2->h, d->crds[d->top]);
-        d->top++;
-        d->left--;
-    }
-        
-}
-
-
-
 //file i/o
 void svGame(const p1 *p, const p1 *p2, const dek *d){
     FILE *f = fopen("gofish.dat", "wb"); //open file to write in
@@ -705,74 +685,142 @@ int pcTurn(p1 *asking, p1 *asked, dek *pool){
 }
 
 int main(int argc, char** argv) {
-//random function
-    srand(time(NULL));
+/**
+ * @brief main function to run go fish game
+ * use player pointer for different player types
+ * @return 0 will exit game
+ */
+    srand(time(NULL)); // random generator
     
+    bool playAgn = true;
     
-    dek myDeck;
-    
-    p1 p, p2;
-    
-    //initialize hands and books
-    p.h.count = 0;
-    p.books = 0;
-    p2.h.count = 0;
-    p2.books = 0;
-    
-    //input player names
-    cout << "Enter name for Player 1: ";
-    cin >> p.name;
-    cout << "Enter name for Player 2: ";
-    strcpy(p2.name, "Computer");
-    
-    //input functions for building, shuffling and dealing the deck
-    dekbld(&myDeck);
-    shufdek(&myDeck);
-    dealCrd(&myDeck, &p, &p2);
-    
-    //check books/sets
-    fulBok(&p);
-    fulBok(&p2);
-    
-    //save to file
-    svGame(&p, &p2, &myDeck);
-    
-    //main loop
-    int turn = 0;
-    int ttlbook = 0;
-    int again;
-    
-    while(ttlbook < 13 ){
-        cout << "Books - " << p.name << ": " << p.books << "||" << p2.name << ": " << p2.books << endl;
-        cout << "Deck: " << myDeck.left << " cards left." << endl;
+    while(playAgn){
+        char humanN[20];
+        cout << "Go Fish Game. " << endl;
+        cout << "Enter your name: " << endl;
+        cin >> humanN; // set your name
         
-        again = 1;
-        
-        while(again){
-            if(turn == 0)
-                again = turns(&p, &p2, &myDeck);
-            else
-                again = pcTurn(&p2, &p, &myDeck);
+        int numCPUs = 0; // variable for cpu number.
+        while(numCPUs < 1 || numCPUs > 3){ // have to chose between 1-3 opponents
+            cout << "Please choose total number of opponents (1-3): " << endl;
+            cin >> numCPUs;
+            if(numCPUs < 1 || numCPUs > 3){ // if outside 1-3 you have to choose again between
+                cout << "Please choose again between 1-3: " << endl;
+            }
         }
-        ttlbook = p.books + p2.books;
         
-        //check for empty hand and deck
-        if(p.h.count == 0 && p2.h.count == 0 && myDeck.left == 0)
-            break;
-        turn = 1 - turn; // turn is obselete
+        char level;
+        bool vLevel = false;
+        while(!vLevel){
+            cout << "Choose Computer Difficulty between Easy(E) or Hard(H): " << endl;
+            cin >> level;
+            level = toupper(level);
+            if(level == 'E' || level == 'H'){
+                vLevel = true;
+            }
+        }
+        int totalP = numCPUs + 1;
+        player *players[4]; // array to have 4 max players. you and 3 cpus max
+        
+        players[0] = new HumanP1(humanN); //human player
+        
+        char cpuName[3][20] = {"CPU 1", "CPU 2", "CPU 3"};
+        for(int i = 0; i < numCPUs; i++){ // set new cpus as either easy or hard setting class to it
+            if(level == 'E') {
+                players[i + 1] = new easyCPU(cpuName[i]);
+            }
+            else{
+                players[i + 1] = new hardCPU(cpuName[i]);
+            }
+        }
+        dek<crd> gDeck;
+        gDeck.dekbld();
+        gDeck.shuffle(); // build and shuffle deck
+        
+        for(int round = 0; round < 7; round++){ //deal 7 cards per player0
+            for( int p = 0; p < totalP; p++){
+                crd deal = gDeck.dealCrd();
+                players[p]->getHand().adCrd(deal);
+            }
+        }
+        
+        for(int p = 0; p < totalP; p++){
+            players[p]->fulBok();
+        }
+        
+        
+        int turnNow = 0;
+        int numBooks = 0;
+        
+        while(numBooks < 13){
+            cout << endl << "--- Total Score ---" << endl;
+            for( int p = 0; p < totalP; p++){
+                cout << player[p]->getName() << ": " << player[p]->getBook() <<
+                        " Books." << endl; // this will pull up the current score
+            }
+            cout << "deck: " << gDeck.crdLeft() << " cards left." << endl;
+            
+            player *others[3];
+            int nOthers = 0;
+            for(int p = 0; p < totalP; p++){
+                if(p != turnNow){
+                    others[nOthers] = players[p];
+                    nOthers++;
+                }
+            }
+            //take turn
+            bool another = true;
+            while(another){
+                another = player[turnNow]->takeTrn(others[], nOthers, gDeck);
+            }
+            numBooks = 0;
+            for(int p = 0; p < totalP; p++){
+                numBooks += player[p]->fulBok(); // get the total book count
+            }
+            
+            bool alEmpty = (gDeck.crdLeft() == 0);
+            if(alEmpty){
+                for(int p = 0; p < totalP; p++){
+                    if(player[p]->hndCont() > 0){
+                        alEmpty = false;
+                        break;
+                    }
+                }
+            }
+            if(alEmpty) break;
+            turnNow = (turnNow + 1) % totalP;
+        }
+        
+        //For final results
+        cout << endl << "Game Over.";
+        int maxBook = 0;
+        for(int p = 0; p < totalP; p++){
+            cout << player[p]->getName() << ": " << player[p]->getBook() << 
+                    " Books" << endl;
+            if(player[p]->getBook() > maxBook){
+                maxBook = player[p]->getBook();
+            }
+        }
+        cout << endl << "Winner(s): ";
+        for(int p = 0; p < totalP; p++){
+            if(player[p]->getBook() == maxBook){
+                cout << player[p]->getName() << ". ";
+            }
+        }
+        cout << endl;
+        for (int p = 0; p < totalP; p++){
+            delete player[p]; // virtual destructor to clean up memory
+        }
+        
+        char again;
+        cout << endl << "Play Again? Y/N: ";
+        cin >> again;
+        again = toupper(again);
+        if(again != 'Y'){
+            playAgn = false;
+        }
     }
-    
-    cout << "--- Game Over! ---" << endl;
-    cout << p.name << " : " << p.books << " complete sets. " << endl;
-    cout << p2.name << " : " << p2.books << " complete sets. " << endl;
-    
-    //to decide who wins - game outcome
-    if(p.books > p2.books)
-        cout << p.name << " wins." << endl;
-    else if(p2.books > p.books)
-        cout << p2.name << " wins." << endl;
-    else
-        cout << "Tied game" << endl;
+    cout << "Thank you for playing." << endl;
     
     return 0;
 }
