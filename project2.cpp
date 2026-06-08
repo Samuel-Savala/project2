@@ -5,7 +5,7 @@
 
 /* 
  * File:   project2.cpp
- * Author: saval
+ * 
  *
  * Created on June 3, 2026, 10:53 PM
  */
@@ -13,7 +13,11 @@
  * @file.project2.cpp
  * @brief GoFish Card Game expanded with functions
  * practice inheritance, classes etc.
+ * classes are used with crd, dek, pHand, player
+ * Inheritance with HumanP1, easycpu, hardcpu from player
+ * operator overload (==, !=, << on class
  * @author Samuel Savala
+ * @date 6/7/2026
  * 
  */
 
@@ -152,6 +156,79 @@ public:
 /**
  * @brief overarching class for players
  */
+
+template <class T>
+class pHand{
+private:
+    T cards[52]; //maimum cards a player can technically hold t holds any data type
+    int count; // number of cards in the players hand
+public:
+    /**
+     * @brief initialize an empty hand
+     */
+    pHand() : count(0) {};
+    /**
+     * @brief adding card to hand
+     */
+    void adCrd(T item){
+        if (count < 52){
+            cards[count] = item; // puts item in next opening
+            count++;
+        }
+    }
+    /**
+     * @brief returns # of items in hand
+     * @return count
+     */
+    int getCount() const {return count;}
+    /**
+     * @brief look at a by specific spot
+     */
+    T getCrd(int i) const {
+        return cards[i];
+    }
+    /**
+     * @brief will remove all items matching
+     * @param target item matching and take
+     */
+    
+    int takeCrd(T target){
+        int remove = 0;
+        T temp[52];
+        int nCount = 0;
+        
+        for(int i = 0; i < count; i++){
+            if(cards[i] == target){
+                remove++;
+            }
+            else {
+                temp[nCount] = cards[i];
+                nCount++;
+            }
+        }
+        for( int i = 0; i < nCount; i++){
+            cards[i] = temp[i];
+        }
+        count = nCount;
+        return remove;
+    }
+    
+    /**
+     * @brief checking if hand has a specific card
+     * @return true if found
+     */
+    bool hasCrd(T target) const{
+        for(int i = 0; i < count; i++){
+            if(cards[i] == target){
+                return true; // will loop through cards. if a match is found it's true
+            }
+        }
+        return false;
+    }
+    
+};
+
+
 class player{
 protected: //this and other classes can "inherit" it like an open door to apply for human and PC player
     char name[20];
@@ -172,7 +249,7 @@ public:
      * @param other array for other players
      * @param nOthers # of other players in game
      */
-    virtual bool takeTrn(player *other[], int nOthers, dek<crd> &dek) = 0;
+    virtual bool tkTurn(player *other[], int nOthers, dek<crd> &dek) = 0;
     // = 0 derived classes are forced to provide their own functions
         
     /**
@@ -268,16 +345,23 @@ public:
             drawCrd(dek); ///< inheritance of drawCrd
             return false;
         }
+        
         prntHnd(); //show hand
+        
         //asking for card to choose
         char rank;
+        
         bool valid = false;
+        
         while(!valid){
             cout << endl << name << " pick a card to ask for: ";
+            
             cin >> rank;
+            
             rank = toupper(rank);
             //if statement for player to have it in hand
             crd targetCrd(rank, ' ');
+            
             if(hand.hasCrd(targetCrd)){
                 valid = true;
             }
@@ -287,12 +371,15 @@ public:
         }
         
         int targeti = 0;
+        
         if(nOthers > 1){ //if just one player we skip but if not we ask to pick
             cout << "Pick an opponent to ask for card: " << endl;
             for(int i = 0; i < nOthers; i++)//go through cpu listing
                 cout << " " << (i + 1) << ". " << other[i]->getName() << endl;
         }
+        
         bool vChoice = false;
+        
         while (!vChoice){
             cout << "Enter choice (1-" << nOthers << "): ";
             cin >> targeti;
@@ -313,7 +400,8 @@ public:
             << rank << "'s?" << endl;
     
     crd crdLook(rank, ' '); //searching for card
-    if(target->getHand().getCrd(crdLook)){ //to check and get card
+    
+    if(target->getHand().hasCrd(crdLook)){ //to check and get card
         int taken = target->getHand().takeCrd(crdLook);
         cout << target->getName() << " had " << taken
                 << " card(s). Transfer... " << endl; //check if opponent has cards
@@ -336,87 +424,11 @@ public:
     }
 };
 
-struct dek{
-    crd crds[52]; // 52 card deck
-    int left; // variable of remaining cards
-    int top; // index of next available card
-
-};
-
 
 /**
  * @brief template class to hold any data type in hand
  */
-template <class T>
-class pHand{
-private:
-    T cards[52]; //maimum cards a player can technically hold t holds any data type
-    int count; // number of cards in the players hand
-public:
-    /**
-     * @brief initialize an empty hand
-     */
-    pHand() : count(0) {};
-    /**
-     * @brief adding card to hand
-     */
-    void adCrd(T item){
-        if (count < 52){
-            cards[count] = item; // puts item in next opening
-            count++;
-        }
-    }
-    /**
-     * @brief returns # of items in hand
-     * @return count
-     */
-    int getCount() const {return count;}
-    /**
-     * @brief look at a by specific spot
-     */
-    T getCrd(int i) const {
-        return cards[i];
-    }
-    /**
-     * @brief will remove all items matching
-     * @param target item matching and take
-     */
-    
-    int takeCrd(T target){
-        int remove = 0;
-        T temp[52];
-        int nCount = 0;
-        
-        for(int i = 0; i < count; i++){
-            if(cards[i] == target){
-                remove++;
-            }
-            else {
-                temp[nCount] = cards[i];
-                nCount++;
-            }
-        }
-        for( int i = 0; i < nCount; i++){
-            cards[i] = temp[i];
-        }
-        count = nCount;
-        return remove;
-    }
-    
-    /**
-     * @brief checking if hand has a specific card
-     * @return true if found
-     */
-    bool hasCrd(T target) const{
-        for(int i = 0; i < count; i++){
-            if(cards[i] == target){
-                return true; // will loop through cards. if a match is found it's true
-            }
-        }
-        return false;
-    }
-    
-};
+
 
 /**
  * @brief class for computer players
@@ -441,7 +453,7 @@ public:
      * @param deck reference
      * @return true for cpu to have +1 turn or false if not
      */
-    bool tTurn(player *others[], int nOthers, dek<crd> &dek){
+    bool tkTurn(player *others[], int nOthers, dek<crd> &dek){
         if(hand.getCount() == 0){
             drawCrd(dek);
             return false;
@@ -494,7 +506,7 @@ public:
     char pkRank(){
         int randomi = rand() % hand.getCount();//random number between hand size
         char cRank = hand.getCrd(randomi).getRank();
-        return cRank(); //get the rank and return
+        return cRank; //get the rank and return
     }
     
 };
@@ -537,152 +549,39 @@ public:
     }
     
 };
+
+/**
+ * @brief Save game result to a text file
+ */
+void svGame(player *players[], int totalP, const char *winName){
+    ofstream outFile("gofishstats.txt", ios::app); //will add to the file instead of overwriting
     
-struct p1{ //about player 1
-    char name[20];//For players name
-    pHand h; //cards in players hand currently referencing pHand struct
-    int books; // numbers of books player has scored
-    
-};
-
-
-
-//file i/o
-void svGame(const p1 *p, const p1 *p2, const dek *d){
-    FILE *f = fopen("gofish.dat", "wb"); //open file to write in
-    if(f == NULL){
-        cout << "Save Game Error... ";
+    if(!outFile.is_open()){
+        cout << "Error: Could not open stats file." << endl;
         return;
     }
-    fwrite(p, sizeof(p1), 1, f); //write in for player 1
-    fwrite(p2, sizeof(p1), 1, f); //write in player 2
-    fwrite(d, sizeof(dek), 1, f); //for the deck
-    fclose(f);
-    cout << "Game Saved." << endl;
+    
+    time_t now = time(0); // get current time
+    char *dt = ctime(&now);
+    
+    outFile << "-----------------------------" << endl;
+    outFile << "Game Played: " << dt;
+    outFile << "Winner: " << winName << endl;
+    outFile << "--Final Score--" << endl;
+    
+    for(int p = 0; p < totalP; p++){
+        outFile << players[p]->getName() << ": " << 
+                players[p]->getBook() << " books" << endl;
+    }
+    
+    outFile << endl;
+    outFile.close();
+    
+    cout << "Game Stats saved to gofish_stats.txt" << endl;
     
 }
 
-void LdGame(p1 *p, p1 *p2, dek *d){
-    FILE *f = fopen("gofish.dat", "rb"); //open file to write in
-    if(f == NULL){
-        cout << "No Save Data... ";
-        return;
-    }
-    fread(p, sizeof(p1), 1, f); //read back in for player 1
-    fread(p2, sizeof(p1), 1, f); //read back in player 2
-    fread(d, sizeof(dek), 1, f); //for the deck
-    fclose(f);
-    cout << "Game Loaded." << endl;
-}
-
-//loop for turns
-int turns(p1 *asking, p1 *asked, dek *pool){
-    //won't take a turn if the hand is empty
-    if(asking->h.count == 0){
-        drawCrd(pool, asking);
-        return 0;
-    }
-    prntHnd(asking);
     
-    //player will choose card to ask about
-    char rank;
-    int valid = 0;
-    
-    while(!valid){
-        cout << endl << asking->name << " pick a card to ask for: ";
-        cin >> rank;
-        rank = toupper(rank); // will help to automatically capitalize
-        
-    //for a rank they actually have
-        if(hasCrd(&asking->h, rank))
-            valid = 1;
-        else
-            cout << "Error: Ask for a rank you hold... " << endl;
-    }
-    
-    //ask the other person
-    cout << asking->name << " asks " << asked->name << ", Do you have " << rank << "'s" << endl;
-    
-    if(hasCrd(&asked->h, rank)){
-        int taken = takeCrd(&asked->h, rank);
-        cout << asked->name << " had " << taken << " Card. Transfer... " << endl;
-        
-    //adding card to whoever asked hand
-        for(int i = 0; i < taken; i++){
-            crd c;
-            c.rank = rank;
-            c.suit = '?';
-            adCrd(&asking->h, c);
-        }
-        fulBok(asking);
-        cout << asking->name << " go again." << endl;
-        return 1;
-    }
-    else{
-        cout << "Go Fish!" << endl;
-        drawCrd(pool, asking);
-        fulBok(asking);
-        return 0;
-    }
-}
-
-//computer initialize
-char pickRnk(const pHand *h){
-    const char ranks[] = "A23456789TJQK";
-    int best = 0;
-    
-    char bstRank = h->cards[0].rank;
-    
-    for(int r = 0; r < 13; r++){
-        int cnt = 0;
-        for(int i = 0; i < h->count; i++){
-            if(h->cards[i].rank == ranks[r])
-                cnt++;
-        }
-        if(cnt >best){
-            best = cnt;
-            bstRank = ranks[r];
-        }
-    }
-    return bstRank;
-}
-
-
-//computer turn
-int pcTurn(p1 *asking, p1 *asked, dek *pool){
-    if(asking->h.count == 0){
-        drawCrd(pool, asking);
-        return 0;
-    }
-    
-    cout << "---Computer's Turn---" << endl;
-    char rank = pickRnk(&asking->h); //automatica pick card
-    
-    cout << asking->name << " asks " << asked->name <<": Do you have " << rank << "'s" << endl;
-    
-    if (hasCrd(&asked->h, rank)){
-        int taken = takeCrd(&asked->h, rank);
-        cout << asked->name << " had " << taken << " card. Transfer..." << endl;
-        
-        for(int i = 0; i < taken; i++){
-            crd c;
-            c.rank = rank;
-            c.suit = ' ';
-            adCrd(&asking->h, c);
-        }
-        fulBok(asking);
-        cout << asking->name << " goes again." << endl;
-        return 1;
-    }
-    else{
-        cout << "Go Fish!" << endl;
-        drawCrd(pool, asking);
-        fulBok(asking);
-        return 0;
-    }
-    
-    
-}
 
 int main(int argc, char** argv) {
 /**
@@ -755,7 +654,7 @@ int main(int argc, char** argv) {
         while(numBooks < 13){
             cout << endl << "--- Total Score ---" << endl;
             for( int p = 0; p < totalP; p++){
-                cout << player[p]->getName() << ": " << player[p]->getBook() <<
+                cout << players[p]->getName() << ": " << players[p]->getBook() <<
                         " Books." << endl; // this will pull up the current score
             }
             cout << "deck: " << gDeck.crdLeft() << " cards left." << endl;
@@ -771,17 +670,19 @@ int main(int argc, char** argv) {
             //take turn
             bool another = true;
             while(another){
-                another = player[turnNow]->takeTrn(others[], nOthers, gDeck);
+                another = players[turnNow]->tkTurn(others, nOthers, gDeck);
             }
             numBooks = 0;
             for(int p = 0; p < totalP; p++){
-                numBooks += player[p]->fulBok(); // get the total book count
+                players[p]->fulBok();
+                
+                numBooks += players[p]->getBook(); // get the total book count
             }
             
             bool alEmpty = (gDeck.crdLeft() == 0);
             if(alEmpty){
                 for(int p = 0; p < totalP; p++){
-                    if(player[p]->hndCont() > 0){
+                    if(players[p]->hndCont() > 0){
                         alEmpty = false;
                         break;
                     }
@@ -795,21 +696,36 @@ int main(int argc, char** argv) {
         cout << endl << "Game Over.";
         int maxBook = 0;
         for(int p = 0; p < totalP; p++){
-            cout << player[p]->getName() << ": " << player[p]->getBook() << 
+            cout << players[p]->getName() << ": " << players[p]->getBook() << 
                     " Books" << endl;
-            if(player[p]->getBook() > maxBook){
-                maxBook = player[p]->getBook();
+            if(players[p]->getBook() > maxBook){
+                maxBook = players[p]->getBook();
             }
         }
         cout << endl << "Winner(s): ";
         for(int p = 0; p < totalP; p++){
-            if(player[p]->getBook() == maxBook){
-                cout << player[p]->getName() << ". ";
+            if(players[p]->getBook() == maxBook){
+                cout << players[p]->getName() << ". ";
             }
         }
         cout << endl;
+        
+        //find winner name for stats file
+        const char *winName = "Tie";
+        int winCnt = 0;
+        for(int p = 0; p < totalP; p++){
+            if(players[p]->getBook() == maxBook){
+                winName = players[p]->getName();
+                winCnt++;
+            }
+        }
+        if(winCnt > 1) winName = "Tie";
+        
+        //Save to text file
+        svGame(players, totalP, winName);
+        
         for (int p = 0; p < totalP; p++){
-            delete player[p]; // virtual destructor to clean up memory
+            delete players[p]; // virtual destructor to clean up memory
         }
         
         char again;
